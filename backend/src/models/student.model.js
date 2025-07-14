@@ -2,7 +2,7 @@ import mongoose, {Schema} from "mongoose";
 import jwt from "jsonwebtoken"
 import bcrypt from "bcrypt"
 
-const userSchema = new Schema(
+const studentSchema = new Schema(
     {
         fullName: {
             type: String,
@@ -62,7 +62,7 @@ const userSchema = new Schema(
 );
 
 // Virtual field (not stored in DB) for confirm password
-userSchema.virtual("confirmPassword")
+studentSchema.virtual("confirmPassword")
   .get(function () {
     return this._confirmPassword;
   })
@@ -71,7 +71,7 @@ userSchema.virtual("confirmPassword")
   });
 
 // Validate password === confirmPassword before saving
-userSchema.pre("save", function (next) {
+studentSchema.pre("save", function (next) {
   if (this.isNew && this.password !== this._confirmPassword) {
     this.invalidate("confirmPassword", "Passwords do not match");
   }
@@ -79,7 +79,7 @@ userSchema.pre("save", function (next) {
 });
 
 // Hash password before saving
-userSchema.pre("save", async function (next) {
+studentSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
 
   this.password = await bcrypt.hash(this.password, 10);
@@ -87,11 +87,11 @@ userSchema.pre("save", async function (next) {
 });
 
 // Instance method to compare password
-userSchema.methods.isPasswordCorrect = async function (inputPassword) {
+studentSchema.methods.isPasswordCorrect = async function (inputPassword) {
   return await bcrypt.compare(inputPassword, this.password);
 };
 
-userSchema.methods.generateAccessToken = function(){
+studentSchema.methods.generateAccessToken = function(){
     return jwt.sign(
         {
             _id: this._id,
@@ -104,7 +104,7 @@ userSchema.methods.generateAccessToken = function(){
         }
     )
 }
-userSchema.methods.generateRefreshToken = function(){
+studentSchema.methods.generateRefreshToken = function(){
     return jwt.sign(
         {
             _id: this._id,
@@ -117,4 +117,4 @@ userSchema.methods.generateRefreshToken = function(){
 }
 
 
-export const User = mongoose.model("User", userSchema);
+export const Student = mongoose.model("Student", studentSchema);
