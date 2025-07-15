@@ -61,22 +61,6 @@ const studentSchema = new Schema(
     }
 );
 
-// Virtual field (not stored in DB) for confirm password
-studentSchema.virtual("confirmPassword")
-  .get(function () {
-    return this._confirmPassword;
-  })
-  .set(function (value) {
-    this._confirmPassword = value;
-  });
-
-// Validate password === confirmPassword before saving
-studentSchema.pre("save", function (next) {
-  if (this.isNew && this.password !== this._confirmPassword) {
-    this.invalidate("confirmPassword", "Passwords do not match");
-  }
-  next();
-});
 
 // Hash password before saving
 studentSchema.pre("save", async function (next) {

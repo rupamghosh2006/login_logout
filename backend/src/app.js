@@ -30,4 +30,9 @@ app.use(express.static("public"))
 
 app.use(cookieParser())
 
+// routes import 
+
+import studentRouter from "./routes/student.routes.js"
+app.use("/api/v1/students", studentRouter)
+
 export { app }

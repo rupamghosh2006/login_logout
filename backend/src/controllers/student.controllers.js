@@ -6,19 +6,19 @@ import { ApiResponse } from "../utils/ApiResponses.js";
 const registerStudent = asyncHandler( async(req, res) => {
 
     // get srudent details from frontend
-    const { fullName, mobile, class_No, guardianName, guardianMobile } = req.body
+    const { fullName, mobile, class_No, password, guardianName, guardianMobile } = req.body
 
     // validation - not empty
 
     if(
-        [fullName, mobile, class_No, guardianName, guardianMobile].some((field) =>
+        [fullName, mobile, class_No, guardianName, password, guardianMobile].some((field) =>
         field?.trim() === "")
     ){
         throw new ApiError(400, "All fields are required")
     }
     
     // check is student already exists: by mobile
-    const existedStudent = await User.findOne({ mobile });
+    const existedStudent = await Student.findOne({ mobile });
 
     if(existedStudent){
         throw new ApiError(409, "Student with mobile no. already exists")
@@ -30,7 +30,7 @@ const registerStudent = asyncHandler( async(req, res) => {
         fullName,
         mobile,
         class_No,
-        email,
+        password,
         guardianName,
         guardianMobile
         }
@@ -46,7 +46,7 @@ const registerStudent = asyncHandler( async(req, res) => {
     }
 
     return res.status(201).json(
-        new ApiResponse(200, createdUser, "Student registered Successfully")
+        new ApiResponse(200, createdStudent, "Student registered Successfully")
     )
 
 })
