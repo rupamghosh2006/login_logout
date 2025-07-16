@@ -3,6 +3,26 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponses.js";
 
+const generateAccessAndRefreshTokens = async (studentId) => {
+    try {
+        const student = await Student.findById(studentId);
+        if (!student) {
+            throw new ApiError(404, "Student not found");
+        }
+
+        const accessToken = student.generateAccessToken();
+        const refreshToken = student.generateRefreshToken();
+
+        student.refreshToken = refreshToken;
+        await student.save({ validateBeforeSave: false });
+
+        return { accessToken, refreshToken };
+    } catch (error) {
+        console.error("Token generation error:", error);
+        throw new ApiError(500, "Something went wrong while generating access and refresh token");
+    }
+};
+
 const registerStudent = asyncHandler( async(req, res) => {
 
     // get srudent details from frontend
@@ -51,6 +71,57 @@ const registerStudent = asyncHandler( async(req, res) => {
 
 })
 
+const loginStudent = asyncHandler( async(req, res) => {
+    
+    // get frontend data from req.body
+    const {mobile, password} = req.body
+
+    if(!mobile){
+        throw new ApiError(400, "Mobile no. is required")
+    }
+
+    // find student by mobile
+    const student = await Student.findOne({ mobile });
+
+    if(!student){
+        throw new ApiError(404, "Student does not exist")
+    }
+
+    const isPasswordValid = await student.isPasswordCorrect(password)
+
+    if(!isPasswordValid){
+        throw new ApiError(401, "Invalid student credentials!")
+    }
+
+    // generate access token & refresh token
+    const {accessToken, refreshToken} = await generateAccessAndRefreshTokens(student._id)
+
+    // if DB call is expensive operation --> Update object, or call DB
+
+    const loggedInStudent = await Student.findById(student._id).select("-password -refreshToken")
+
+    // frontend can't modify, only server could edit
+    const options = {
+        httpOnly: true,
+        secure: true
+    }
+
+    return res
+    .status(200)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
+    .json(
+        new ApiResponse(
+            200,{
+                user: loggedInStudent, accessToken, refreshToken
+            },
+            "Student logged in Successfully"
+        )
+    )
+
+})
+
 export {
-    registerStudent
+    registerStudent,
+    loginStudent
 };

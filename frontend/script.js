@@ -24,8 +24,9 @@ if (registerForm) {
   });
 }
 
-// Handle Login
+/// Handle Login
 const loginForm = document.getElementById("loginForm");
+
 if (loginForm) {
   loginForm.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -33,22 +34,32 @@ if (loginForm) {
     const formData = new FormData(loginForm);
     const data = Object.fromEntries(formData.entries());
 
-    const response = await fetch(`${API_BASE}/students/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include", // if using cookies
-      body: JSON.stringify(data),
-    });
+    try {
+      const response = await fetch(`${API_BASE}/students/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include", // if using cookies
+        body: JSON.stringify(data),
+      });
 
-    const result = await response.json();
+      let result = {};
+      try {
+        result = await response.json(); // might throw
+      } catch (jsonError) {
+        console.warn("Failed to parse JSON from server");
+      }
 
-    if (response.ok) {
-      // Store token in localStorage or cookies if you return it
-      localStorage.setItem("token", result.data?.accessToken || "");
-      alert("Login successful!");
-      window.location.href = "dashboard.html";
-    } else {
-      alert(result.message || "Login failed");
+      if (response.ok) {
+        localStorage.setItem("token", result.data?.accessToken || "");
+        alert("Login successful!");
+        window.location.href = "dashboard.html";
+      } else {
+        alert(result?.message || "Login failed");
+      }
+
+    } catch (error) {
+      console.error("Login error:", error);
+      alert("Network or server error. Please try again later.");
     }
   });
 }
