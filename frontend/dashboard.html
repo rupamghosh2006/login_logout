@@ -2,15 +2,57 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="icon" href="favicon.ico" />
 </head>
-<body class="bg-gray-50 flex items-center justify-center min-h-screen">
-  <div class="text-center bg-white p-10 rounded shadow-lg">
-    <h1 class="text-3xl font-bold text-green-700 mb-6">Welcome to the Dashboard</h1>
-    <button onclick="logout()" class="px-6 py-2 bg-red-600 text-white rounded hover:bg-red-700">Logout</button>
+
+<body class="bg-gray-100 flex items-center justify-center min-h-screen font-sans">
+  <div class="bg-white shadow-xl rounded-2xl p-8 max-w-md w-full text-center border border-gray-200">
+    
+    <h1 class="text-4xl font-extrabold text-green-700 mb-4">🎓 Dashboard</h1>
+
+    <p class="text-gray-600 mb-6">
+      Welcome back, <span id="studentName" class="font-semibold text-gray-800">Student</span>!
+    </p>
+
+    <button 
+      onclick="logout()"
+      class="bg-red-600 hover:bg-red-700 transition-colors duration-300 text-white font-medium py-2 px-6 rounded-full shadow-sm">
+      Logout
+    </button>
   </div>
 
-  <script src="script.js"></script>
+  <script>
+    // Optional: set student's name if available
+    const studentData = JSON.parse(localStorage.getItem("user")); // Save user on login if needed
+    if (studentData?.fullName) {
+      document.getElementById("studentName").textContent = studentData.fullName;
+    }
+
+    async function logout() {
+      try {
+        const response = await fetch("http://localhost:8000/api/v1/students/logout", {
+          method: "POST",
+          credentials: "include",
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          alert(result.message || "Logged out!");
+          window.location.href = "index.html";
+        } else {
+          alert(result.message || "Logout failed. Try again.");
+        }
+      } catch (error) {
+        console.error("Logout error:", error);
+        alert("Server error. Please try again.");
+      }
+    }
+  </script>
 </body>
 </html>

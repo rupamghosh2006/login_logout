@@ -1,35 +1,57 @@
-const API_BASE = "http://localhost:8000/api/v1"; // adjust your backend port
+const API_BASE = "http://localhost:8000/api/v1"; // adjust based on deployment
 
-// Handle Registration
+// 🧾 Utility: show toast/alert
+function showAlert(message, isSuccess = true) {
+  alert(`${isSuccess ? "✅" : "❌"} ${message}`);
+}
+
+// 🔐 REGISTER
 const registerForm = document.getElementById("registerForm");
 if (registerForm) {
   registerForm.addEventListener("submit", async (e) => {
     e.preventDefault();
 
+    const submitBtn = registerForm.querySelector("button[type='submit']");
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Registering...";
+
     const formData = new FormData(registerForm);
     const data = Object.fromEntries(formData.entries());
 
-    const response = await fetch(`${API_BASE}/students/register`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
+    try {
+      const response = await fetch(`${API_BASE}/students/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
 
-    const result = await response.json();
-    alert(result.message);
+      const result = await response.json();
 
-    if (response.ok) {
-      window.location.href = "index.html";
+      if (response.ok) {
+        showAlert(result.message || "Registration successful!");
+        window.location.href = "index.html";
+      } else {
+        showAlert(result.message || "Registration failed.", false);
+      }
+    } catch (err) {
+      console.error("Register error:", err);
+      showAlert("Server error during registration", false);
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Register";
     }
   });
 }
 
-/// Handle Login
+// 🔑 LOGIN
 const loginForm = document.getElementById("loginForm");
-
 if (loginForm) {
   loginForm.addEventListener("submit", async (e) => {
     e.preventDefault();
+
+    const submitBtn = loginForm.querySelector("button[type='submit']");
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Logging in...";
 
     const formData = new FormData(loginForm);
     const data = Object.fromEntries(formData.entries());
@@ -38,36 +60,60 @@ if (loginForm) {
       const response = await fetch(`${API_BASE}/students/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include", // if using cookies
+        credentials: "include",
         body: JSON.stringify(data),
       });
 
       let result = {};
       try {
-        result = await response.json(); // might throw
-      } catch (jsonError) {
-        console.warn("Failed to parse JSON from server");
+        result = await response.json();
+      } catch {
+        console.warn("Invalid JSON response");
       }
 
       if (response.ok) {
         localStorage.setItem("token", result.data?.accessToken || "");
-        alert("Login successful!");
+        showAlert("Login successful!");
         window.location.href = "dashboard.html";
       } else {
-        alert(result?.message || "Login failed");
+        showAlert(result?.message || "Invalid credentials", false);
       }
 
     } catch (error) {
       console.error("Login error:", error);
-      alert("Network or server error. Please try again later.");
+      showAlert("Network error. Try again.", false);
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Login";
     }
   });
 }
 
-// Handle Logout
-function logout() {
-  // Optional: call logout API if you store refresh token in DB
-  localStorage.removeItem("token");
-  alert("Logged out!");
-  window.location.href = "index.html";
+// 🚪 LOGOUT
+async function logout() {
+  try {
+    const response = await fetch(`${API_BASE}/students/logout`, {
+      method: "POST",
+      credentials: "include",
+    });
+
+    const contentType = response.headers.get("content-type");
+
+    let result = {};
+    if (contentType && contentType.includes("application/json")) {
+      result = await response.json();
+    }
+
+    if (response.ok) {
+      localStorage.removeItem("token");
+      alert(result.message || "Logged out!");
+      window.location.href = "index.html";
+    } else {
+      alert(result.message || `Logout failed: ${response.status}`);
+    }
+
+  } catch (error) {
+    console.error("Logout error:", error);
+    alert("Server error. Please try again.");
+  }
 }
